@@ -1,0 +1,65 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/Oswald-Bold.ttf",
+      "sha1": "a6d0bf488eefe0dea9d0e433f0bc706514a7f8f6"
+    },
+    {
+      "path": "assets/fonts/Oswald-ExtraLight.ttf",
+      "sha1": "54094aacf931425f323b4e2d809cb74083068277"
+    },
+    {
+      "path": "assets/fonts/Oswald-Light.ttf",
+      "sha1": "1f13f471e7cde44a982053900edc8b1fd937c191"
+    },
+    {
+      "path": "assets/fonts/Oswald-Medium.ttf",
+      "sha1": "b6fc839618be0f67340c1b035d24f8c7feac3d69"
+    },
+    {
+      "path": "assets/fonts/Oswald-Regular.ttf",
+      "sha1": "d16c1dcb19e0e7572d2dea9d7445c0506c20b25d"
+    },
+    {
+      "path": "assets/fonts/Oswald-SemiBold.ttf",
+      "sha1": "51cc130393057ad133b937f45e27e33fc26ee87e"
+    },
+    {
+      "path": "assets/fonts/Teko-Bold.ttf",
+      "sha1": "601570b4aadf5e28c41c631e1f3d87ee60d04790"
+    },
+    {
+      "path": "assets/fonts/Teko-Light.ttf",
+      "sha1": "7a53cfddcb1b94277cd0c98a716de4219ad01c4d"
+    },
+    {
+      "path": "assets/fonts/Teko-Medium.ttf",
+      "sha1": "9b2926fea3daf1c1a13ae8d0d1bfce8218b16460"
+    },
+    {
+      "path": "assets/fonts/Teko-Regular.ttf",
+      "sha1": "af065fdd632f2f58db79b4991e50ca5f7f51fb9c"
+    },
+    {
+      "path": "assets/fonts/Teko-SemiBold.ttf",
+      "sha1": "596e2556c2a4667eddf8affa1a77628a7a2e3467"
+    },
+    {
+      "path": "assets/fonts/icomoon.eot",
+      "sha1": "c834583c7bc84cd1719e14148362f67e26904431"
+    },
+    {
+      "path": "assets/fonts/icomoon.svg",
+      "sha1": "34c3afc76810cff2ba12d11f73f99863d3f3c91c"
+    },
+    {
+      "path": "assets/fonts/icomoon.ttf",
+      "sha1": "aa1ccc235e337d30412c3063346dcb610dd6f4ff"
+    },
+    {
+      "path": "assets/fonts/icomoon.woff",
+      "sha1": "8e635b6f9de968b891476a00ec7782c769c68f92"
+    }
+  ]
+}
