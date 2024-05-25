@@ -2,7 +2,7 @@
  * This React Native phone applications serves as a dashboard to monitor and control my ESP32 project.
  */
 import React, { Component, useState, useEffect } from 'react';
-import {StyleSheet, View, Image, Text, Button, TouchableHighlight} from 'react-native';
+import {StyleSheet, View, Image, Text, Button, TouchableHighlight, Animated, Easing} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -20,27 +20,44 @@ const options = {
 const client = mqtt.connect(options.host);
 
 const MCUData = () => {
+  //Defining the states where the data is stored
   const [internalTemperature, setInternalTemperature] = useState();
   const [internalHumidity, setInternalHumidity] = useState();
-  const [internalAirQuality, setInternalAirQuality] = useState();
-  const [weatherTemperature, setWeatherTemperature] = useState(); //weatherTemperature.toFixed(2)
+  const [gasResistance, setInternalGasResistance] = useState();
+  const [weatherTemperature, setWeatherTemperature] = useState();
   const [weatherHumidity, setWeatherHumidity] = useState();
   const [weatherWindSpeed, setWeatherWindSpeed] = useState();
   const [weatherWindDeg, setWeatherWindDeg] = useState();
   const [weatherWarnings, setWeatherWarnings] = useState();
+  const defaultValue = 0
+  const [rotation] = useState(new Animated.Value(0)); //Starting value of the rotation (the arrow points upwards)
 
   setMCUDataStates = (jsonObject) => {
-    //TODO: Add a loading effect is specific state is undefined
+    //Parsing the data from the JSON object to the states
     setInternalTemperature(jsonObject.internal_data.internal_temperature);
     setInternalHumidity(jsonObject.internal_data.internal_humidity);
-    setInternalAirQuality(jsonObject.internal_data.internal_airquality);
+    setInternalGasResistance(jsonObject.internal_data.gas_resistance);
     setWeatherTemperature(jsonObject.weather_data.weather_temperature);
     setWeatherHumidity(jsonObject.weather_data.weather_humidity);
-    setWeatherWindSpeed(jsonObject.weather_data.weather_wind_speed.toFixed(2));
+    setWeatherWindSpeed(jsonObject.weather_data.weather_wind_speed);
     setWeatherWindDeg(jsonObject.weather_data.weather_wind_deg);
     setWeatherWarnings(jsonObject.weather_data.weather_alert_event);
   }
   
+  useEffect(() => {
+    //The rotation follows the direction of the wind
+    Animated.timing(rotation, {
+      toValue: weatherWindDeg,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [weatherWindDeg]);
+
+  const spin = rotation.interpolate({
+    inputRange: [0, 360], //The arrow moves like a compass
+    outputRange: ['0deg', '360deg'], //Rotate from 0 to 360 degrees
+  });
+
   //Handling the message recieved through the MQTT broker, and putting it through a JSON parser to get the data from the microcontroller.
   useEffect(() => {
     client.on('message', (topic, payload) => {
@@ -58,6 +75,7 @@ const MCUData = () => {
 
   },[]);
  
+  
   return (
     <>
       <View style={[styles.elements, {flex: 2.5}]}>
@@ -69,7 +87,7 @@ const MCUData = () => {
             />
           </View>
           <Text style={styles.font}>
-            {internalTemperature} °C
+            {internalTemperature||defaultValue} °C
           </Text>
         </View>
         <View style={styles.subelements}>
@@ -80,18 +98,18 @@ const MCUData = () => {
             />
           </View>
           <Text style={styles.font}>
-            {internalHumidity} %
+            {internalHumidity||defaultValue} %
           </Text>
         </View>
         <View style={styles.subelements}>
           <View style={styles.highlight}>
             <MaterialCommunityIcons
-              name='molecule-co2' 
+              name='air-filter' 
               style={styles.icons}  
             />
           </View>
           <Text style={styles.font}>
-            {internalAirQuality} PPM
+            {(gasResistance/1000||defaultValue).toFixed(1)} kΩ
           </Text>
         </View>
       </View>
@@ -104,7 +122,7 @@ const MCUData = () => {
             />
           </View>
           <Text style={styles.font}>
-            {weatherTemperature} °C
+            {(weatherTemperature||defaultValue).toFixed(1)} °C
           </Text>
         </View>
         <View style={styles.subelements}>
@@ -115,7 +133,7 @@ const MCUData = () => {
             />
           </View>
           <Text style={styles.font}>
-            {weatherHumidity} %
+            {weatherHumidity||defaultValue} %
           </Text>
         </View>
         <View style={styles.subelements}>
@@ -125,9 +143,17 @@ const MCUData = () => {
               style={styles.icons}  
             />
           </View>
-          <Text style={styles.font}>
-            {weatherWindSpeed} km/h
-          </Text>
+          <View style={[styles.highlight, {alignItems: 'flex-end'}, {flexDirection: 'row'}]}>
+            <Animated.View style={[styles.highlight, {alignItems: 'flex-end'}, { transform: [{ rotate: spin }] } ]}>
+              <MaterialCommunityIcons
+                name='arrow-up-thin'
+                style={[styles.icons, {paddingRight: 5}]}
+              />
+            </Animated.View>
+            <Text style={styles.font}>
+              {(weatherWindSpeed||defaultValue).toFixed(1)} km/h
+            </Text>
+          </View>
         </View>
         <View style={styles.subelements}>
           <View style={styles.highlight}>
@@ -136,6 +162,9 @@ const MCUData = () => {
               style={[styles.icons, {fontSize: 37}]}
             />
           </View>
+          <Text style={[styles.font, { color: 'transparent' }]}>
+              X
+          </Text>
         </View>
       </View>
     </>
@@ -207,7 +236,6 @@ const App = () => {
                 <MaterialCommunityIcons name='window-closed-variant' style={styles.icons} onPress={()=>{showPopupWindow()}}/>
               </TouchableHighlight>
             </View>
-            
           </View>
         </View>
       </View>
