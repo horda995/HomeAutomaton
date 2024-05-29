@@ -8,6 +8,8 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Slider } from '@miblanchard/react-native-slider';
 import WeatherIcon from './weatherIcon';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { color } from '@rneui/base';
 import mqtt from "precompiled-mqtt"
 import { MqttHost, MqttTopic } from './Credentials';
@@ -18,166 +20,102 @@ const options = {
 };
 
 const client = mqtt.connect(options.host);
-
-const MCUData = () => {
-  //Defining the states where the data is stored
-  const [internalTemperature, setInternalTemperature] = useState();
-  const [internalHumidity, setInternalHumidity] = useState();
-  const [gasResistance, setInternalGasResistance] = useState();
-  const [weatherTemperature, setWeatherTemperature] = useState();
-  const [weatherHumidity, setWeatherHumidity] = useState();
-  const [weatherWindSpeed, setWeatherWindSpeed] = useState();
-  const [weatherWindDeg, setWeatherWindDeg] = useState();
-  const [weatherWarnings, setWeatherWarnings] = useState();
-  const defaultValue = 0
-  const [rotation] = useState(new Animated.Value(0)); //Starting value of the rotation (the arrow points upwards)
-
-  setMCUDataStates = (jsonObject) => {
-    //Parsing the data from the JSON object to the states
-    setInternalTemperature(jsonObject.internal_data.internal_temperature);
-    setInternalHumidity(jsonObject.internal_data.internal_humidity);
-    setInternalGasResistance(jsonObject.internal_data.gas_resistance);
-    setWeatherTemperature(jsonObject.weather_data.weather_temperature);
-    setWeatherHumidity(jsonObject.weather_data.weather_humidity);
-    setWeatherWindSpeed(jsonObject.weather_data.weather_wind_speed);
-    setWeatherWindDeg(jsonObject.weather_data.weather_wind_deg);
-    setWeatherWarnings(jsonObject.weather_data.weather_alert_event);
-  }
-  
-  useEffect(() => {
-    //The rotation follows the direction of the wind
-    Animated.timing(rotation, {
-      toValue: weatherWindDeg,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [weatherWindDeg]);
-
-  const spin = rotation.interpolate({
-    inputRange: [0, 360], //The arrow moves like a compass
-    outputRange: ['0deg', '360deg'], //Rotate from 0 to 360 degrees
-  });
-
-  //Handling the message recieved through the MQTT broker, and putting it through a JSON parser to get the data from the microcontroller.
-  useEffect(() => {
-    client.on('message', (topic, payload) => {
-      console.log('Received message:', payload.toString());
-      try {
-        const jsonObject = JSON.parse(payload.toString());
-        setMCUDataStates(jsonObject);
-      }catch(error){
-        console.log('JSON parse error', error)
-      }
-    });
-    return () => {
-      client.end();
-    };
-
-  },[]);
- 
-  
-  return (
-    <>
-      <View style={[styles.elements, {flex: 2.5}]}>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <WeatherIcon
-              name='wi-thermometer'
-              style={styles.icons}
-            />
-          </View>
-          <Text style={styles.font}>
-            {internalTemperature||defaultValue} °C
-          </Text>
-        </View>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <WeatherIcon
-              name='wi-humidity'
-              style={styles.icons}  
-            />
-          </View>
-          <Text style={styles.font}>
-            {internalHumidity||defaultValue} %
-          </Text>
-        </View>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <MaterialCommunityIcons
-              name='air-filter' 
-              style={styles.icons}  
-            />
-          </View>
-          <Text style={styles.font}>
-            {(gasResistance/1000||defaultValue).toFixed(1)} kΩ
-          </Text>
-        </View>
-      </View>
-      <View style={[styles.elements, {flex: 2.5}]}>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <WeatherIcon
-              name='wi-day-sunny'
-              style={styles.icons}  
-            />
-          </View>
-          <Text style={styles.font}>
-            {(weatherTemperature||defaultValue).toFixed(1)} °C
-          </Text>
-        </View>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <WeatherIcon
-              name='wi-humidity'
-              style={styles.icons}  
-            />
-          </View>
-          <Text style={styles.font}>
-            {weatherHumidity||defaultValue} %
-          </Text>
-        </View>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <MaterialCommunityIcons
-              name='windsock'
-              style={styles.icons}  
-            />
-          </View>
-          <View style={[styles.highlight, {alignItems: 'flex-end'}, {flexDirection: 'row'}]}>
-            <Animated.View style={[styles.highlight, {alignItems: 'flex-end'}, { transform: [{ rotate: spin }] } ]}>
-              <MaterialCommunityIcons
-                name='arrow-up-thin'
-                style={[styles.icons, {paddingRight: 5}]}
-              />
-            </Animated.View>
-            <Text style={styles.font}>
-              {(weatherWindSpeed||defaultValue).toFixed(1)} km/h
-            </Text>
-          </View>
-        </View>
-        <View style={styles.subelements}>
-          <View style={styles.highlight}>
-            <FontAwesome
-              name='exclamation-triangle'
-              style={[styles.icons, {fontSize: 37}]}
-            />
-          </View>
-          <Text style={[styles.font, { color: 'transparent' }]}>
-              X
-          </Text>
-        </View>
-      </View>
-    </>
-  );
-};
+var isLoaded = false;
 
 const App = () => {
-  const [popupWindowVisible, setPopupWindowVisible] = useState(false);
-  const [windowDeg, setWindowDeg] = useState(0); //this will be tricky to define, not sure what sort of motor will i be using
+    //Defining the states where the data is stored
+    const [internalTemperature, setInternalTemperature] = useState(0);
+    const [internalHumidity, setInternalHumidity] = useState(0);
+    const [gasResistance, setInternalGasResistance] = useState(1);
+    const [IAQ, setIAQ] = useState(0);
+    const [weatherTemperature, setWeatherTemperature] = useState(0);
+    const [weatherHumidity, setWeatherHumidity] = useState(0);
+    const [weatherWindSpeed, setWeatherWindSpeed] = useState(0);
+    const [weatherWindDeg, setWeatherWindDeg] = useState(0);
+    const [weatherWarnings, setWeatherWarnings] = useState();
+    
+    const [rotation] = useState(new Animated.Value(0)); //Starting value of the rotation (the arrow points upwards)
+  
+    setMCUDataStates = (jsonObject) => {
+      //Parsing the data from the JSON object to the states
+      if (jsonObject.internal_data && jsonObject.internal_data.internal_temperature) {
+        setInternalTemperature(jsonObject.internal_data.internal_temperature);
+      }
+      if (jsonObject.internal_data && jsonObject.internal_data.internal_humidity) {
+        setInternalHumidity(jsonObject.internal_data.internal_humidity);
+      }
+      if (jsonObject.internal_data && jsonObject.internal_data.gas_resistance) {
+        setInternalGasResistance(jsonObject.internal_data.gas_resistance);
+        setIAQ(Math.log(gasResistance) + 0.04 * internalHumidity)
+      }
+      
+      if (jsonObject.internal_data && jsonObject.internal_data.desired_temperature) {
+        setDesiredTemp(jsonObject.internal_data.desired_temperature);
+      }
+      if (jsonObject.internal_data && jsonObject.internal_data.window_deg) {
+        setWindowDeg(jsonObject.internal_data.window_deg);
+      }
+      if (jsonObject.internal_data && jsonObject.internal_data.is_auto) {
+        setIsAuto(jsonObject.internal_data.is_auto);
+      }
 
-  showPopupWindow = () => {
-    setPopupWindowVisible(!popupWindowVisible);
-  }
+      if (jsonObject.weather_data && jsonObject.weather_data.weather_temperature) {
+        setWeatherTemperature(jsonObject.weather_data.weather_temperature);
+      }
+      if (jsonObject.weather_data && jsonObject.weather_data.weather_humidity) {
+        setWeatherHumidity(jsonObject.weather_data.weather_humidity);
+      }
+      if (jsonObject.weather_data && jsonObject.weather_data.weather_wind_speed) {
+        setWeatherWindSpeed(jsonObject.weather_data.weather_wind_speed);
+      }
+      if (jsonObject.weather_data && jsonObject.weather_data.weather_wind_deg) {
+        setWeatherWindDeg(jsonObject.weather_data.weather_wind_deg);
+      }
+      if (jsonObject.weather_data && jsonObject.weather_data.weather_alert_event) {
+        setWeatherWarnings(jsonObject.weather_data.weather_alert_event);
+      }
+      
+    }
+    
+    useEffect(() => {
+      //The rotation follows the direction of the wind
+      Animated.timing(rotation, {
+        toValue: weatherWindDeg,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, [weatherWindDeg]);
+  
+    const spin = rotation.interpolate({
+      inputRange: [0, 360], //The arrow moves like a compass
+      outputRange: ['0deg', '360deg'], //Rotate from 0 to 360 degrees
+    });
+  
+    //Handling the message recieved through the MQTT broker, and putting it through a JSON parser to get the data from the microcontroller.
+    useEffect(() => {
+      client.on('message', (topic, payload) => {
+        console.log('Received message:', payload.toString());
+        try {
+          const jsonObject = JSON.parse(payload.toString());
+          setMCUDataStates(jsonObject);
+          isLoaded = true;
+        }catch(error){
+          console.log('JSON parse error', error)
+        }
+      });
+      return () => {
+        client.end();
+      };
+  
+    },[]);
+
+
+  const [windowDeg, setWindowDeg] = useState(0);
+  const [desiredTemp, setDesiredTemp] = useState(20);
+  const [isAuto, setIsAuto] = useState(0);
+
+  const [sliderTempDisabled, setSliderTempDisabled] = useState(true);
+  const [sliderWindowDisabled, setSliderWindowDisabled] = useState(false);
 
   //Handling the connection to the MQTT broker, and subscription to the MQTT topic
   useEffect(() => {
@@ -203,49 +141,235 @@ const App = () => {
       client.end();
     };
     
-
   },[]);
-  
-  //Monitoring the value, end publishing the value to the microcontroller, if it has been changed.
-  useEffect(() => {
-    const jsonObjectWindowDeg = {
+
+  const MQTTPublish = () => {
+    const jsonObjectData = {
       phoneData: {
         "windowDeg" : windowDeg.valueOf(),
+        "desiredTemperature" : desiredTemp.valueOf(),
+        "isAuto:" : isAuto.valueOf()
       }
     }
-    client.publish('/topic/phoneData', JSON.stringify(jsonObjectWindowDeg));
-    console.log("jsonObject sent:", JSON.stringify(jsonObjectWindowDeg));
-  },[windowDeg]);
+    client.publish('/topic/phoneData', JSON.stringify(jsonObjectData));
+    console.log("jsonObject sent:", JSON.stringify(jsonObjectData));
+  }
+
   
-  
+  const enableSliderTemp = () => {
+    setSliderTempDisabled(false);
+    setSliderWindowDisabled(true);
+    setIsAuto(1);
+  };
+
+  const enableSliderWindow = () => {
+    setSliderTempDisabled(true);
+    setSliderWindowDisabled(false);
+    setIsAuto(0);
+  };
+
+  useEffect(() => {
+    // Function to load data from AsyncStorage
+    const loadFromAsyncStorage = async () => {
+      try {
+        const windowDegData = await AsyncStorage.getItem('windowDeg');
+        const desiredTempData = await AsyncStorage.getItem('desiredTemp');
+        const isAutoData = await AsyncStorage.getItem('isAuto');
+
+        if (windowDegData !== null) {
+          setWindowDeg(JSON.parse(windowDegData));
+          console.log('Read windowdeg: ', windowDeg);
+        }
+        if (desiredTempData !== null) {
+          setDesiredTemp(JSON.parse(desiredTempData));
+          console.log('Read desiredtemp: ', desiredTemp);
+        }
+        if (isAutoData !== null) {
+          setIsAuto(JSON.parse(isAutoData));
+          console.log('Read isAuto: ', isAuto);
+        }
+      } catch (error) {
+        console.error('Error loading data from AsyncStorage:', error);
+      }
+      isLoaded = true;
+    };
+
+    // Call the function to load data when the component mounts
+    loadFromAsyncStorage();
+  }, []); // Empty dependency array to run only once on component mount
+
+  useEffect(() => {
+    //Update the storage when any of the state variables change
+    const updateAsyncStorage = async () => {
+      try {
+        await AsyncStorage.setItem('windowDeg', JSON.stringify(windowDeg));
+        console.log('Storing windowDeg: ', windowDeg);
+        await AsyncStorage.setItem('desiredTemp', JSON.stringify(desiredTemp));
+        console.log('Storing desiredTemp: ', desiredTemp);
+        await AsyncStorage.setItem('isAuto', JSON.stringify(isAuto));
+        console.log('Storing isAuto: ', isAuto);
+      } catch (error) {
+        console.error('Error saving data to AsyncStorage:', error);
+      }
+    };
+
+    if(isLoaded){
+      updateAsyncStorage();
+    }
+    MQTTPublish();
+  }, [windowDeg, desiredTemp, isAuto]);
+
+
+  useEffect(() => {
+    if (isAuto === 1){
+      enableSliderTemp();
+    }
+    else if (isAuto === 0){
+      enableSliderWindow();
+    }
+  }, [isAuto]);
+
   return (
     <>
       <View style={styles.container}>
-        <MCUData />
-        <View style={[styles.elements, {flex: 1}]}> 
+        <View style={[styles.elements, {flex: 1.1}]}>
           <View style={styles.subelements}>
-            <TouchableHighlight style={styles.highlight}>
+            <View style={styles.highlight}>
               <MaterialCommunityIcons
-                name='thermostat-box'
-                style={styles.icons} 
-                
+                name='home-thermometer-outline'
+                style={styles.icons}
               />
-            </TouchableHighlight>
-            <View>
-              <TouchableHighlight style={styles.highlight}>
-                <MaterialCommunityIcons name='window-closed-variant' style={styles.icons} onPress={()=>{showPopupWindow()}}/>
+            </View>
+            <Text style={styles.font}>
+              {internalTemperature} °C
+            </Text>
+          </View>
+          <View style={styles.subelements}>
+            <View style={styles.highlight}>
+              <WeatherIcon
+                name='wi-humidity'
+                style={styles.icons}  
+              />
+            </View>
+            <Text style={styles.font}>
+              {internalHumidity} %
+            </Text>
+          </View>
+          <View style={styles.subelements}>
+            <View style={styles.highlight}>
+              <MaterialCommunityIcons
+                name='air-filter' 
+                style={styles.icons}  
+              />
+            </View>
+            <Text style={styles.font}>
+              {(IAQ).toFixed(1)} IAQ
+            </Text>
+          </View>
+        </View>
+        <View style={[styles.elements, {flex: 1.3}]}>
+          <View style={styles.subelements}>
+            <View style={styles.highlight}>
+              <WeatherIcon
+                name='wi-thermometer'
+                style={styles.icons}
+              />
+            </View>
+            <Text style={styles.font}>
+              {(weatherTemperature).toFixed(1)} °C
+            </Text>
+          </View>
+          <View style={styles.subelements}>
+            <View style={styles.highlight}>
+              <WeatherIcon
+                name='wi-humidity'
+                style={styles.icons}  
+              />
+            </View>
+            <Text style={styles.font}>
+              {weatherHumidity} %
+            </Text>
+          </View>
+          <View style={styles.subelements}>
+            <View style={styles.highlight}>
+              <MaterialCommunityIcons
+                name='windsock'
+                style={styles.icons}  
+              />
+          </View>
+          <View style={[styles.highlight, {alignItems: 'flex-end'}, {flexDirection: 'row'}]}>
+            <Animated.View style={[styles.highlight, {alignItems: 'flex-end'}, { transform: [{ rotate: spin }] } ]}>
+              <MaterialCommunityIcons
+                name='arrow-up-thin'
+                style={[styles.icons, {paddingRight: 5}]}
+              />
+            </Animated.View>
+            <Text style={styles.font}>
+              {(weatherWindSpeed).toFixed(1)} km/h
+            </Text>
+          </View>
+        </View>
+        <View style={styles.subelements}>
+          <View style={styles.highlight}>
+            <FontAwesome
+              name='exclamation-triangle'
+              style={[styles.icons, {fontSize: 37}]}
+            />
+          </View>
+          <Text style={[styles.font, { color: 'transparent' }]}>
+              X
+          </Text>
+        </View>
+      </View>
+        <View style={[styles.elements, {flex: 1}]}> 
+          <View style={{paddingBottom: 10}}>
+            <View style={[styles.sliderelement]}>
+              <TouchableHighlight style={styles.highlight} onLongPress={enableSliderTemp}>
+                <MaterialCommunityIcons
+                  name='thermostat'
+                  style={styles.icons}
+                />
+              </TouchableHighlight>
+              <Text style={styles.font}>
+                {desiredTemp} °C
+              </Text>
+            </View>
+            <Slider
+              step={1}
+              minimumValue={10}
+              maximumValue={30}
+              value={desiredTemp.valueOf()}
+              onValueChange={value => {
+                setDesiredTemp(value[0]);
+              }}
+              thumbTintColor={sliderTempDisabled ? 'grey' : '#bba96d'}
+              minimumTrackTintColor={sliderTempDisabled ? 'grey' : '#bba96d'} 
+              disabled = {sliderTempDisabled}
+           />
+          </View>
+          <View >
+            <View style={[styles.sliderelement]}>
+              <TouchableHighlight style={styles.highlight} onLongPress={enableSliderWindow}>
+                <MaterialCommunityIcons
+                  name='window-closed-variant'
+                  style={styles.icons} 
+                />
               </TouchableHighlight>
             </View>
+            <Slider
+              minimumValue={0}
+              maximumValue={1}
+              value={windowDeg.valueOf()}
+              onSlidingComplete={value => {
+                setWindowDeg(value[0]);
+              }}
+              thumbTintColor={sliderWindowDisabled ? 'grey' : '#bba96d'}
+              minimumTrackTintColor={sliderWindowDisabled ? 'grey' : '#bba96d'} 
+              disabled = {sliderWindowDisabled}
+           />
           </View>
         </View>
       </View>
-      {popupWindowVisible && <View style={styles.popupWindow}>
-      <Slider
-          value={windowDeg.valueOf()}
-          onSlidingComplete={value => setWindowDeg(value[0])}
-      />
-      <Text style={{color:'white'}}>Value: {windowDeg.valueOf()}</Text>
-      </View>}
     </>
   )
 }
@@ -260,6 +384,7 @@ const styles = StyleSheet.create({
   elements: {
     padding: 20,
     paddingLeft: 30,
+    paddingRight: 30,
     borderRadius: 35,
     backgroundColor: '#0f0f0f',
     margin: 5,
@@ -274,8 +399,21 @@ const styles = StyleSheet.create({
     alignItems:'center'
   },
 
+  sliderelement: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+
   icons: {
     fontSize: 45,
+    alignSelf: 'center',
+    color: 'lightgray',
+    verticalAlign: 'middle'
+  },
+
+  iconsBig: {
+    fontSize: 60,
     alignSelf: 'center',
     color: 'lightgray',
     verticalAlign: 'middle'
@@ -291,8 +429,7 @@ const styles = StyleSheet.create({
 
   highlight: {
     justifyContent: 'center',
-    alignItems: 'center'
-    
+    alignItems: 'center',
   },
 
   data: {
