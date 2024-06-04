@@ -1,15 +1,15 @@
-/**
- * This React Native phone applications serves as a dashboard to monitor and control my ESP32 project.
+OOOOBOOBOO/**
+ * This ReOBOact Native phone applications serves as a dashboard to monitor and control my ESP32 project.
  */
-import React, { Component, useState, useEffect } from 'react';
-import {StyleSheet, View, Image, Text, Button, TouchableHighlight, Animated, Easing} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import React,OO { Component, useState, useEffect } from 'react';
+import {StyleSOOOOOOOOOOOOBOBOOOheet, View, Image, Text, Button, TouchableHighlight, Animated, Easing} from 'react-native';
+import AsyncStorage from '@reactO-native-async-storage/async-storage';
+import FontAwesome from 'react-naOOOOOtive-vector-icons/FontAwesome';
+import MaterialCommunityIcons from 'reOBOOOOBOOOOOOOOOOOOOOOact-native-vector-icons/MaterialCommunityIcons';
 import { Slider } from '@miblanchard/react-native-slider';
-import WeatherIcon from './weatherIcon';
-import mqtt from "precompiled-mqtt"
-import { MqttHost, MqttTopic } from './Credentials';
+import WeatherIcon from './weatherIcon';BOOOOBOOO
+import mqtt from "precompiled-mqttO"
+import { MqttHost, MqttTopic } fromOOOO './Credentials';
 
 const options = {
   host: MqttHost,
@@ -18,8 +18,6 @@ const options = {
 
 const client = mqtt.connect(options.host);
 var isLoaded = false;
-var warningColor = 'lightgray'
-var snow = blizzard = fog = wind = rain = hail = storm = false;
 
 const App = () => {
     //Defining the states where the data is stored
@@ -31,8 +29,7 @@ const App = () => {
     const [weatherHumidity, setWeatherHumidity] = useState(0);
     const [weatherWindSpeed, setWeatherWindSpeed] = useState(0);
     const [weatherWindDeg, setWeatherWindDeg] = useState(0);
-    const [weatherWarnings, setWeatherWarnings] = useState("default");
-    const [weatherWarningsDesc, setWeatherWarningsDesc] = useState("default");
+    const [weatherWarnings, setWeatherWarnings] = useState(' ');
     
     const [rotation] = useState(new Animated.Value(0)); //Starting value of the rotation (the arrow points upwards)
   
@@ -74,71 +71,25 @@ const App = () => {
       if (jsonObject.weather_data && jsonObject.weather_data.weather_alert_event) {
         setWeatherWarnings(jsonObject.weather_data.weather_alert_event);
       }
-      if (jsonObject.weather_data && jsonObject.weather_data.weather_alert_description) {
-        setWeatherWarningsDesc(jsonObject.weather_data.weather_alert_description);
-      }
       
     }
     
 
-    const findWarningLevel = (word, string) => {
+    const findWordInString = (word, string) => {
       //Convert everything to lowercase for case-insensitive search
       const lowerCaseWord = word.toLowerCase();
-      const lowerCaseString = string.toString().toLowerCase();
+      const lowerCaseString = string.toLowerCase();
+      
       //Check if the string contains the word
       if (lowerCaseString.includes(lowerCaseWord)) {
           return lowerCaseWord;
       } else {
           return '';
       }
-    };
-
-    const findWordInString = (word, string) => {
-      //Convert everything to lowercase for case-insensitive search
-      const lowerCaseWord = word.toLowerCase();
-      const lowerCaseString = string.toString().toLowerCase();
-      //Check if the string contains the word
-      if (lowerCaseString.includes(lowerCaseWord)) {
-          return true;
-      } else {
-          return false;
-      }
-    };
+  };
 
     useEffect(() => {
-      //Determine the level of the weather warning, and assign a color to it
-      if(findWarningLevel('yellow', weatherWarnings)!==''){
-        warningColor = 'gold';
-      }
-      if(findWarningLevel('orange', weatherWarnings)!==''){
-        warningColor = 'darkorange';
-      }
-      if(findWarningLevel('red', weatherWarnings)!==''){
-        warningColor = 'firebrick';
-      }
-
-      //Finding the warning type
-      snow = findWordInString('snow', weatherWarningsDesc);
-      console.log('Is there a snow warning:', snow.toString());
-
-      blizzard = findWordInString('blizzard', weatherWarningsDesc);
-      console.log('Is there a blizzard warning:', blizzard.toString());
-
-      fog = findWordInString('fog', weatherWarningsDesc);
-      console.log('Is there a fog warning:', fog.toString());
-
-      wind = findWordInString('wind', weatherWarningsDesc);
-      console.log('Is there a wind warning:', wind.toString());
-
-      rain = findWordInString('rain', weatherWarningsDesc);
-      console.log('Is there a rain warning:', rain.toString());
-
-      hail = findWordInString('hail', weatherWarningsDesc);
-      console.log('Is there a hail warning:', hail.toString());
-
-      storm = findWordInString('thunderstorm', weatherWarningsDesc);
-      console.log('Is there a storm warning:', storm.toString());
-
+      console.log('Warning level: ', findWordInString('yellow', weatherWarnings));
     }, [weatherWarnings]);
 
     //Animating an arrow to show the wind direction on the app
@@ -378,18 +329,12 @@ const App = () => {
           <View style={styles.highlight}>
             <FontAwesome
               name='exclamation-triangle'
-              style={[styles.icons, {fontSize: 37}, {color: warningColor}]}
+              style={[styles.icons, {fontSize: 37}]}
             />
           </View>
-          <View style={{justifyContent: 'flex-end', flexDirection: 'row'}}>
-            <WeatherIcon name='wi-snow' style={[styles.icons, {color:'transparent'}]} />
-            {(snow||blizzard) && <WeatherIcon name='wi-snow' style={styles.icons} />}
-            {storm && <WeatherIcon name='wi-thunderstorm' style={styles.icons} />}
-            {fog && <WeatherIcon name='wi-fog' style={styles.icons} />}
-            {wind && <WeatherIcon name='wi-strong-wind' style={styles.icons} />}
-            {rain && <WeatherIcon name='wi-rain' style={styles.icons} />}
-            {hail && <WeatherIcon name='wi-hail' style={styles.icons} />}
-          </View>
+          <Text style={[styles.font, { color: 'transparent' }]}>
+              X
+          </Text>
         </View>
       </View>
         <View style={[styles.elements, {flex: 1}]}> 
@@ -428,9 +373,8 @@ const App = () => {
               </TouchableHighlight>
             </View>
             <Slider
-              minimumValue={-90}
-              maximumValue={90}
-              step={1}
+              minimumValue={0}
+              maximumValue={1}
               value={windowDeg.valueOf()}
               onSlidingComplete={value => {
                 setWindowDeg(value[0]);
