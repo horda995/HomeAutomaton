@@ -19,7 +19,8 @@ const options = {
 const client = mqtt.connect(options.host);
 var isLoaded = false;
 var warningColor = 'lightgray'
-var snow = blizzard = fog = wind = rain = hail = storm = false;
+var snow = blizzard = fog = wind = rain = hail = storm = highTemp = lowTemp = false;
+var sleet = false;
 
 const App = () => {
     //Defining the states where the data is stored
@@ -138,6 +139,15 @@ const App = () => {
 
       storm = findWordInString('thunderstorm', weatherWarningsDesc);
       console.log('Is there a storm warning:', storm.toString());
+
+      highTemp = findWordInString('high temperature', weatherWarnings);
+      console.log('Is there a high temperature warning:', highTemp.toString());
+
+      lowTemp = findWordInString('low temperature', weatherWarnings);
+      console.log('Is there a low temperature warning:', lowTemp.toString());
+
+      sleet = findWordInString('sleet', weatherWarningsDesc);
+      console.log('Is there a sleet warning:', sleet.toString());
 
     }, [weatherWarnings]);
 
@@ -280,8 +290,9 @@ const App = () => {
 
     if(isLoaded){
       updateAsyncStorage();
+      MQTTPublish();
     }
-    MQTTPublish();
+    
   }, [windowDeg, desiredTemp, isAuto]);
 
 
@@ -389,6 +400,9 @@ const App = () => {
             {wind && <WeatherIcon name='wi-strong-wind' style={styles.icons} />}
             {rain && <WeatherIcon name='wi-rain' style={styles.icons} />}
             {hail && <WeatherIcon name='wi-hail' style={styles.icons} />}
+            {sleet && <WeatherIcon name='wi-sleet' style={styles.icons} />}
+            {highTemp && <WeatherIcon name='wi-thermometer' style={styles.icons} />}
+            {lowTemp && <WeatherIcon name='wi-thermometer-exterior' style={styles.icons} />}
           </View>
         </View>
       </View>
@@ -481,7 +495,7 @@ const styles = StyleSheet.create({
     fontSize: 45,
     alignSelf: 'center',
     color: 'lightgray',
-    verticalAlign: 'middle'
+    verticalAlign: 'middle',
   },
 
   iconsBig: {
