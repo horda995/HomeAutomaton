@@ -292,6 +292,13 @@ const App = () => {
       updateAsyncStorage();
       MQTTPublish();
     }
+    else{
+      const jsonObjectData = {
+        phoneData: {
+        }
+      }
+      client.publish('/topic/phoneData', JSON.stringify(jsonObjectData));
+    }
     
   }, [windowDeg, desiredTemp, isAuto]);
 
